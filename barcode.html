@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Barcode & 2D Generator — Robust bwip-js loader</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;margin:28px;background:#f6f7fb;color:#111}
+  .card{max-width:760px;margin:0 auto;background:#fff;padding:22px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.06)}
+  h1{font-size:20px;margin:0 0 8px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+  input[type="text"]{padding:9px;border-radius:8px;border:1px solid #ddd;min-width:260px;flex:1}
+  select,input[type="color"],button{padding:8px;border-radius:8px;border:1px solid #ddd;background:#fff}
+  button{cursor:pointer}
+  #output{margin-top:18px;min-height:240px;display:flex;align-items:center;justify-content:center;flex-direction:column}
+  #feedback{height:20px;margin-top:6px;font-size:13px;color:#333}
+  .downloads{margin-top:12px;display:flex;gap:10px;justify-content:center}
+  .error{color:#9b1c1c;font-weight:600;margin-top:8px}
+  .hint{font-size:13px;color:#555;margin-top:8px}
+  label{font-size:13px;color:#333}
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>Barcode & 2D Code Generator</h1>
+
+    <div class="row">
+      <label style="min-width:80px">Category</label>
+      <select id="category">
+        <option value="1d">1D Barcode</option>
+        <option value="2d">2D Code</option>
+      </select>
+
+      <label style="min-width:60px">Type</label>
+      <select id="codeType"></select>
+    </div>
+
+    <div class="row">
+      <label style="min-width:80px">Value</label>
+      <input id="valueInput" type="text" placeholder="Enter text or numeric code" />
+      <label style="min-width:120px"><input id="autoPad" type="checkbox" checked/> Auto-pad UPC/EAN</label>
+    </div>
+
+    <div id="feedback"></div>
+
+    <div class="row">
+      <label style="min-width:80px">Foreground</label>
+      <input id="fgColor" type="color" value="#000000"/>
+      <label style="min-width:80px">Background</label>
+      <input id="bgColor" type="color" value="#ffffff"/>
+      <button id="generateBtn">Generate</button>
+    </div>
+
+    <div id="output"></div>
+
+    <div class="downloads" id="downloads" style="display:none">
+      <button id="downloadPng">Download PNG</button>
+    </div>
+
+    <div id="sysError" class="error" style="display:none"></div>
+    <div class="hint">If your network blocks CDNs, download the bwip-js browser file and host locally (instructions below).</div>
+  </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  async function loadScript(url){
+    return new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src=url; s.onload=()=>res(); s.onerror=()=>rej(url);
+      document.head.appendChild(s);
+    });
+  }
+  async function ensureBwip(){
+    const urls=[
+      'https://cdn.jsdelivr.net/npm/bwip-js@2.0.10/dist/bwip-js-min.js',
+      'https://unpkg.com/bwip-js@2.0.10/dist/bwip-js-min.js'
+    ];
+    for(const u of urls){try{await loadScript(u);if(typeof bwipjs!=='undefined')return true;}catch(e){}}
+    return false;
+  }
+  const ok=await ensureBwip();
+  const sysError=document.getElementById('sysError');
+  if(!ok){sysError.style.display='block';sysError.textContent='bwip-js failed to load.';}
+
+  const types1d=['CODE128','EAN13','UPC','CODE39','ITF14'];
+  const types2d=['QR','DataMatrix','PDF417','Aztec'];
+  const bwipMap={CODE128:'code128',EAN13:'ean13',UPC:'upca',CODE39:'code39',ITF14:'itf14',QR:'qrcode',DataMatrix:'datamatrix',PDF417:'pdf417',Aztec:'azteccode'};
+
+  const categoryEl=document.getElementById('category');
+  const codeTypeEl=document.getElementById('codeType');
+  const valueInputEl=document.getElementById('valueInput');
+  const autoPadEl=document.getElementById('autoPad');
+  const feedbackEl=document.getElementById('feedback');
+  const fgColorEl=document.getElementById('fgColor');
+  const bgColorEl=document.getElementById('bgColor');
+  const generateBtn=document.getElementById('generateBtn');
+  const outputEl=document.getElementById('output');
+  const downloadsEl=document.getElementById('downloads');
+  const downloadPngBtn=document.getElementById('downloadPng');
+
+  function populateTypes(){
+    const list=categoryEl.value==='1d'?types1d:types2d;
+    codeTypeEl.innerHTML='';
+    list.forEach(t=>{
+      const o=document.createElement('option');o.value=t;o.textContent=t;
+      codeTypeEl.appendChild(o);
+    });
+    validateLive();
+  }
+  categoryEl.addEventListener('change',populateTypes);
+  codeTypeEl.addEventListener('change',validateLive);
+  valueInputEl.addEventListener('input',validateLive);
+  populateTypes();
+
+  // GS1 check digit (mod 10)
+  function calcGS1CheckDigit(num){
+    const digits=num.split('').map(Number);
+    let sum=0;
+    for(let i=0;i<digits.length;i++){
+      sum += digits[digits.length-1-i] * ((i%2===0)?3:1);
+    }
+    const mod=sum%10;
+    return (mod===0)?0:10-mod;
+  }
+
+	function validateLive() {
+	  const val = valueInputEl.value.trim();
+	  const t = codeTypeEl.value;
+	  let msg = '', color = 'gray';
+
+	  if (t === 'UPC') {
+		msg = `UPC: ${val.length}/12 digits (11 ok – auto check digit)`;
+		if (/^\d{12}$/.test(val) || /^\d{11}$/.test(val)) color = 'green';
+		else color = 'orange';
+	  } 
+	  else if (t === 'EAN13') {
+		msg = `EAN-13: ${val.length}/13 digits (12 ok – auto check digit)`;
+		if (/^\d{13}$/.test(val) || /^\d{12}$/.test(val)) color = 'green';
+		else color = 'orange';
+	  } 
+	  else if (t === 'ITF14') {
+		msg = `ITF-14: ${val.length}/14 digits (13 ok – auto check digit)`;
+		if (/^\d{14}$/.test(val) || /^\d{13}$/.test(val)) color = 'green';
+		else color = 'orange';
+	  } 
+	  else {
+		msg = '';
+	  }
+
+	  feedbackEl.textContent = msg;
+	  feedbackEl.style.color = color;
+	}
+
+  generateBtn.addEventListener('click',()=>{
+    if(typeof bwipjs==='undefined'){alert('bwip-js not available.');return;}
+    let value=valueInputEl.value.trim();
+    const type=codeTypeEl.value, fg=fgColorEl.value, bg=bgColorEl.value;
+    outputEl.innerHTML=''; downloadsEl.style.display='none';
+    if(!value){alert('Enter a value');return;}
+
+    // numeric auto-padding & check digits
+    if(autoPadEl.checked){
+      if(type==='UPC' && /^\d{11,12}$/.test(value)){
+        if(value.length===11) value += calcGS1CheckDigit(value);
+        if(value.length<12) value=value.padStart(12,'0');
+        valueInputEl.value=value;
+      }
+      if(type==='EAN13' && /^\d{12,13}$/.test(value)){
+        if(value.length===12) value += calcGS1CheckDigit(value);
+        if(value.length<13) value=value.padStart(13,'0');
+        valueInputEl.value=value;
+      }
+      if(type==='ITF14' && /^\d{13,14}$/.test(value)){
+        if(value.length===13) value += calcGS1CheckDigit(value);
+        valueInputEl.value=value;
+      }
+    }
+
+    // strict checks
+    if(type==='UPC' && !/^\d{12}$/.test(value)){alert('UPC must be 12 digits (with check digit).');return;}
+    if(type==='EAN13' && !/^\d{13}$/.test(value)){alert('EAN13 must be 13 digits (with check digit).');return;}
+    if(type==='ITF14' && !/^\d{14}$/.test(value)){alert('ITF-14 must be 14 digits (with check digit).');return;}
+
+    const bcid=bwipMap[type]; if(!bcid){alert('Unsupported type');return;}
+    const canvas=document.createElement('canvas'); outputEl.appendChild(canvas);
+
+	try {
+	  bwipjs.toCanvas(canvas, {
+		bcid,
+		text: value,
+		scale: 3,
+		includetext: (categoryEl.value === '1d'),
+		textxalign: 'center',
+		backgroundcolor: bg.replace('#', '').toLowerCase(),
+	  });
+
+// === Fully adaptive recolor for any background ===
+const ctx = canvas.getContext('2d');
+const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+const data = imgData.data;
+
+function hexToRgb(hex) {
+  hex = hex.replace('#', '');
+  if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+  const num = parseInt(hex, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+const fgRGB = hexToRgb(fg);
+const bgRGB = hexToRgb(bg);
+
+function luma({ r, g, b }) {
+  return 0.299 * r + 0.587 * g + 0.114 * b;
+}
+const fgL = luma(fgRGB);
+const bgL = luma(bgRGB);
+const invert = bgL < fgL;
+
+// Pass 1: measure brightness range of generated image
+let minB = 255, maxB = 0;
+for (let i = 0; i < data.length; i += 4) {
+  const br = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  if (br < minB) minB = br;
+  if (br > maxB) maxB = br;
+}
+
+// Pass 2: normalize brightness & recolor adaptively
+const mid = (minB + maxB) / 2;
+for (let i = 0; i < data.length; i += 4) {
+  const br = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+  const darkPixel = br < mid;
+  const isFgPixel = invert ? !darkPixel : darkPixel;
+
+  if (isFgPixel) {
+    data[i] = fgRGB.r;
+    data[i + 1] = fgRGB.g;
+    data[i + 2] = fgRGB.b;
+  } else {
+    data[i] = bgRGB.r;
+    data[i + 1] = bgRGB.g;
+    data[i + 2] = bgRGB.b;
+  }
+}
+
+ctx.putImageData(imgData, 0, 0);
+// === end fully adaptive recolor ===
+
+
+	  outputEl._last = canvas;
+	  downloadsEl.style.display = 'flex';
+	} catch (err) {
+	  console.error(err);
+	  alert('Error: ' + err.message);
+	}
+  });
+
+  downloadPngBtn.addEventListener('click',()=>{
+    const c=outputEl._last; if(!c)return;
+    const a=document.createElement('a');
+    a.href=c.toDataURL('image/png'); a.download='barcode.png'; a.click();
+  });
+});
+</script>
+
+</body>
+</html>

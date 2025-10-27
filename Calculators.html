@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" class="transition-colors duration-300">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Performance Calculators</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Enable Tailwind dark mode via class
+    tailwind.config = { darkMode: 'class' };
+  </script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col items-center p-6 transition-colors duration-300">
+
+  <!-- Header -->
+  <header class="text-center mb-8 w-full max-w-5xl flex justify-between items-center">
+    <div>
+      <h1 class="text-3xl font-bold mb-1">Performance Calculators</h1>
+      <p class="text-gray-600 dark:text-gray-400">Tools for efficiency, press setup, and production metrics.</p>
+    </div>
+    <button id="toggleDarkMode" class="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition">
+      🌙 Dark Mode
+    </button>
+  </header>
+
+  <!-- Main Layout -->
+  <main id="calculatorContainer" class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+
+    <!-- METRICS SECTION -->
+    <section class="bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-md p-6 transition-colors duration-300">
+      <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">📊 Metrics</h2>
+
+      <!-- Target Speed Calculator -->
+      <div id="targetSpeedCalculator" class="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 mb-8 transition-colors duration-300">
+        <h3 class="text-xl font-semibold mb-4">Target Speed Calculator</h3>
+        <div class="space-y-4">
+          <div>
+            <label for="jobLength" class="block text-sm font-medium mb-1">Job Length (ft)</label>
+            <input type="number" id="jobLength" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter job length">
+          </div>
+
+          <div>
+            <label for="jobTime" class="block text-sm font-medium mb-1">Job Time (hours)</label>
+            <input type="number" step="0.01" id="jobTime" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter job time (e.g., 15.1)">
+          </div>
+
+          <button id="calculateTargetSpeed" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">Calculate Target Speed</button>
+
+          <div id="targetSpeedResult" class="text-center text-lg font-semibold mt-4"></div>
+
+          <button id="sendToEff" class="hidden w-full bg-green-600 text-white font-semibold py-2 rounded-lg hover:bg-green-700 transition">Send to EFF Calculator</button>
+        </div>
+      </div>
+
+      <!-- EFF Calculator -->
+      <div id="effCalculator" class="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 transition-colors duration-300">
+        <h3 class="text-xl font-semibold mb-4">Efficiency (EFF) Calculator</h3>
+        <div class="space-y-4">
+          <div>
+            <label for="targetSpeed" class="block text-sm font-medium mb-1">Target Speed (FPM)</label>
+            <input type="number" id="targetSpeed" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter or import target speed">
+          </div>
+
+          <div>
+            <label for="actualSpeed" class="block text-sm font-medium mb-1">Actual Speed (FPM)</label>
+            <input type="number" id="actualSpeed" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter actual speed">
+          </div>
+
+          <button id="calculateEff" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">Calculate Efficiency</button>
+
+          <div id="effResult" class="text-center text-lg font-semibold mt-4"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PRESS SECTION -->
+    <section class="bg-gray-50 dark:bg-gray-800 rounded-2xl shadow-md p-6 transition-colors duration-300">
+      <h2 class="text-2xl font-bold text-blue-700 dark:text-blue-400 mb-6 border-b border-gray-200 dark:border-gray-700 pb-2">🛠️ Press</h2>
+
+      <!-- Sleeve Rotation Calculator -->
+      <div id="sleeveRotationCalculator" class="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 transition-colors duration-300">
+        <h3 class="text-xl font-semibold mb-4">Sleeve Rotation Calculator</h3>
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Interface: 1" = 10,000. Calculates rotation input to move between plates.</p>
+
+        <div class="space-y-4">
+          <div>
+            <label for="sleeveDiameter" class="block text-sm font-medium mb-1">Sleeve Diameter (inches)</label>
+            <input type="number" step="0.01" id="sleeveDiameter" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter sleeve diameter">
+          </div>
+
+          <div>
+            <label for="platesAround" class="block text-sm font-medium mb-1">Plates Around</label>
+            <input type="number" id="platesAround" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter plates around">
+          </div>
+
+          <div>
+            <label for="platesToMove" class="block text-sm font-medium mb-1">Plates to Move</label>
+            <input type="number" id="platesToMove" class="w-full border dark:border-gray-600 rounded-lg p-2 bg-gray-50 dark:bg-gray-600 focus:ring-2 focus:ring-blue-500" placeholder="Enter plates to move (default = 1)">
+          </div>
+
+          <button id="calculateSleeveRotation" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-lg hover:bg-blue-700 transition">Calculate Rotation</button>
+
+          <div id="sleeveRotationResult" class="text-center text-lg font-semibold mt-4"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-12 text-gray-500 dark:text-gray-400 text-sm">
+    &copy; <span id="year"></span> Efficiency Tools
+  </footer>
+
+  <script>
+    // Footer year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Dark mode toggle
+    const toggleDarkMode = document.getElementById('toggleDarkMode');
+    const root = document.documentElement;
+
+    function applyTheme(isDark) {
+      if (isDark) {
+        root.classList.add('dark');
+        toggleDarkMode.textContent = '☀️ Light Mode';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        toggleDarkMode.textContent = '🌙 Dark Mode';
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // Load user preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      applyTheme(true);
+    } else {
+      applyTheme(false);
+    }
+
+    toggleDarkMode.addEventListener('click', () => {
+      const isDark = !root.classList.contains('dark');
+      applyTheme(isDark);
+    });
+
+    // --- Target Speed Calculator ---
+    function calculateTargetFPM(lengthFt, timeHours) {
+      if (!lengthFt || !timeHours || timeHours <= 0) return null;
+      return lengthFt / (timeHours * 60);
+    }
+
+    const targetSpeedResult = document.getElementById('targetSpeedResult');
+    const sendToEffBtn = document.getElementById('sendToEff');
+
+    document.getElementById('calculateTargetSpeed').addEventListener('click', () => {
+      const jobLength = parseFloat(document.getElementById('jobLength').value);
+      const jobTime = parseFloat(document.getElementById('jobTime').value);
+      const result = calculateTargetFPM(jobLength, jobTime);
+
+      if (result === null) {
+        targetSpeedResult.textContent = 'Please enter valid job length and time.';
+        targetSpeedResult.classList.remove('text-green-600');
+        targetSpeedResult.classList.add('text-red-500');
+        sendToEffBtn.classList.add('hidden');
+      } else {
+        targetSpeedResult.textContent = `Target Speed: ${result.toFixed(2)} FPM`;
+        targetSpeedResult.classList.remove('text-red-500');
+        targetSpeedResult.classList.add('text-green-400');
+        sendToEffBtn.classList.remove('hidden');
+        sendToEffBtn.dataset.targetValue = result.toFixed(2);
+      }
+    });
+
+    sendToEffBtn.addEventListener('click', () => {
+      const targetValue = sendToEffBtn.dataset.targetValue;
+      if (targetValue) {
+        document.getElementById('targetSpeed').value = targetValue;
+        window.scrollTo({ top: document.getElementById('effCalculator').offsetTop - 20, behavior: 'smooth' });
+      }
+    });
+
+    // --- EFF Calculator ---
+    function calculateEFF(target, actual) {
+      if (!target || !actual || target <= 0) return null;
+      return (actual / target) * 100;
+    }
+
+    document.getElementById('calculateEff').addEventListener('click', () => {
+      const target = parseFloat(document.getElementById('targetSpeed').value);
+      const actual = parseFloat(document.getElementById('actualSpeed').value);
+      const result = calculateEFF(target, actual);
+
+      const resultElement = document.getElementById('effResult');
+      if (result === null) {
+        resultElement.textContent = 'Please enter valid values for both speeds.';
+        resultElement.classList.remove('text-green-400');
+        resultElement.classList.add('text-red-500');
+      } else {
+        resultElement.textContent = `Efficiency: ${result.toFixed(2)}%`;
+        resultElement.classList.remove('text-red-500');
+        resultElement.classList.add('text-green-400');
+      }
+    });
+
+    // --- Sleeve Rotation Calculator ---
+    function calculateSleeveRotation(diameter, plates, movePlates = 1) {
+      if (!diameter || !plates || plates <= 0) return null;
+      return (diameter * 10000 / plates) * movePlates;
+    }
+
+    document.getElementById('calculateSleeveRotation').addEventListener('click', () => {
+      const diameter = parseFloat(document.getElementById('sleeveDiameter').value);
+      const plates = parseFloat(document.getElementById('platesAround').value);
+      const movePlates = parseFloat(document.getElementById('platesToMove').value) || 1;
+
+      const result = calculateSleeveRotation(diameter, plates, movePlates);
+      const resultEl = document.getElementById('sleeveRotationResult');
+
+      if (result === null) {
+        resultEl.textContent = 'Please enter valid sleeve diameter and plates.';
+        resultEl.classList.remove('text-green-400');
+        resultEl.classList.add('text-red-500');
+      } else {
+        resultEl.textContent = `Rotation Input: ${result.toFixed(0)}`;
+        resultEl.classList.remove('text-red-500');
+        resultEl.classList.add('text-green-400');
+      }
+    });
+  </script>
+</body>
+</html>
